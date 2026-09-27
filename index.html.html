@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منصة تسجيل الحضور والغياب - جامعة المستقبل</title>
+<style>
+  :root {
+    --emerald: #0b6e4f;
+    --emerald-dark: #084c37;
+    --gold: #d4af37;
+    --bg: #f4f7f6;
+    --card: #ffffff;
+    --text: #1e2b26;
+    --muted: #6b7a75;
+    --danger: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: linear-gradient(160deg, var(--emerald-dark), var(--emerald) 60%, var(--gold));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 18px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    max-width: 420px;
+    width: 100%;
+    padding: 36px 28px;
+    text-align: center;
+  }
+  .logos {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .logos img {
+    height: 72px;
+    width: auto;
+  }
+  h1 {
+    font-size: 20px;
+    color: var(--emerald-dark);
+    margin: 8px 0 4px;
+  }
+  p.sub {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0 0 24px;
+  }
+  #signin-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--emerald);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 22px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s;
+  }
+  #signin-btn:hover { background: var(--emerald-dark); }
+  #signin-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .status {
+    margin-top: 18px;
+    font-size: 14px;
+    min-height: 20px;
+  }
+  .status.error { color: var(--danger); font-weight: 600; }
+  .status.success { color: var(--emerald-dark); font-weight: 600; }
+  .userbox {
+    margin-top: 20px;
+    padding: 16px;
+    background: #f0f7f4;
+    border: 1px solid #d7e8e1;
+    border-radius: 12px;
+    display: none;
+  }
+  .userbox img { width: 48px; height: 48px; border-radius: 50%; margin-bottom: 8px; }
+  .userbox .name { font-weight: 700; color: var(--emerald-dark); }
+  .userbox .email { color: var(--muted); font-size: 13px; }
+  #signout-btn {
+    margin-top: 14px;
+    background: none;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .footer-note {
+    margin-top: 22px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logos">
+    <img src="logo-university.png" alt="جامعة المستقبل" onerror="this.style.display='none'">
+    <img src="logo-college.png" alt="كلية التربية البدنية" onerror="this.style.display='none'">
+  </div>
+  <h1>منصة تسجيل الحضور والغياب</h1>
+  <p class="sub">كلية التربية البدنية وعلوم الرياضة - جامعة المستقبل</p>
+
+  <button id="signin-btn">تسجيل الدخول بحساب جامعة المستقبل</button>
+  <div id="status" class="status"></div>
+
+  <div id="userbox" class="userbox">
+    <img id="user-photo" src="" alt="">
+    <div class="name" id="user-name"></div>
+    <div class="email" id="user-email"></div>
+    <button id="signout-btn">تسجيل الخروج</button>
+  </div>
+
+  <div class="footer-note">هذه صفحة اختبار للمرحلة الأولى فقط: تسجيل الدخول والتحقق من نطاق الإيميل الجامعي.</div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signOut,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  // إعدادات مشروع Firebase الخاص بك
+  const firebaseConfig = {
+    apiKey: "AIzaSyDLjmRbrc0921TcB596ChOMUEULRqi6qdA",
+    authDomain: "attendance-mustaqbal.firebaseapp.com",
+    projectId: "attendance-mustaqbal",
+    storageBucket: "attendance-mustaqbal.firebasestorage.app",
+    messagingSenderId: "196341031029",
+    appId: "1:196341031029:web:5f99b77b7e016d45b7d83c",
+    measurementId: "G-0Q896DJSH4"
+  };
+
+  // النطاقات المسموح بها حصراً لتسجيل الدخول (الطلبة + التدريسيين)
+  const ALLOWED_DOMAINS = ["mustaqbal-college.edu.iq", "uomus.edu.iq"];
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  const signinBtn = document.getElementById("signin-btn");
+  const signoutBtn = document.getElementById("signout-btn");
+  const statusEl = document.getElementById("status");
+  const userbox = document.getElementById("userbox");
+  const userPhoto = document.getElementById("user-photo");
+  const userName = document.getElementById("user-name");
+  const userEmail = document.getElementById("user-email");
+
+  function setStatus(msg, type) {
+    statusEl.textContent = msg;
+    statusEl.className = "status" + (type ? " " + type : "");
+  }
+
+  signinBtn.addEventListener("click", async () => {
+    signinBtn.disabled = true;
+    setStatus("جارِ تسجيل الدخول...", "");
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const email = (result.user.email || "").toLowerCase();
+      const isAllowed = ALLOWED_DOMAINS.some(domain => email.endsWith("@" + domain));
+      if (!isAllowed) {
+        // الإيميل غير مسموح: نرفضه فوراً ونسجل خروجه
+        await signOut(auth);
+        setStatus("هذا الحساب غير مسموح به. يجب استخدام إيميل جامعة المستقبل الرسمي فقط", "error");
+        signinBtn.disabled = false;
+        return;
+      }
+      setStatus("تم تسجيل الدخول بنجاح ✅", "success");
+    } catch (err) {
+      console.error(err);
+      setStatus("حدث خطأ أثناء تسجيل الدخول. حاول مرة أخرى.", "error");
+      signinBtn.disabled = false;
+    }
+  });
+
+  signoutBtn.addEventListener("click", async () => {
+    await signOut(auth);
+  });
+
+  onAuthStateChanged(auth, (user) => {
+    const userEmailLower = (user && user.email || "").toLowerCase();
+    if (user && ALLOWED_DOMAINS.some(domain => userEmailLower.endsWith("@" + domain))) {
+      signinBtn.style.display = "none";
+      userbox.style.display = "block";
+      userPhoto.src = user.photoURL || "";
+      userName.textContent = user.displayName || "";
+      userEmail.textContent = user.email || "";
+      setStatus("", "");
+    } else {
+      signinBtn.style.display = "inline-flex";
+      signinBtn.disabled = false;
+      userbox.style.display = "none";
+    }
+  });
+</script>
+
+</body>
+</html>
