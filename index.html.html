@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منصة تسجيل الحضور والغياب - جامعة المستقبل</title>
+<style>
+  :root {
+    --emerald: #0b6e4f;
+    --emerald-dark: #084c37;
+    --emerald-light: #e6f2ed;
+    --gold: #d4af37;
+    --bg: #f4f7f6;
+    --card: #ffffff;
+    --text: #1e2b26;
+    --muted: #6b7a75;
+    --danger: #b3261e;
+    --warn: #8a6d00;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .center-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(160deg, var(--emerald-dark), var(--emerald) 60%, var(--gold));
+  }
+  .card {
+    background: var(--card);
+    border-radius: 18px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    max-width: 440px;
+    width: 100%;
+    padding: 36px 28px;
+    text-align: center;
+  }
+  .logos { display: flex; justify-content: center; gap: 14px; margin-bottom: 18px; }
+  .logos img { height: 70px; width: auto; }
+  h1 { font-size: 20px; color: var(--emerald-dark); margin: 8px 0 4px; }
+  h2 { font-size: 18px; color: var(--emerald-dark); margin: 0 0 12px; }
+  p.sub { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .btn-main {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--emerald); color: #fff; border: none; border-radius: 10px;
+    padding: 13px 20px; font-size: 15px; font-weight: 600; width: 100%;
+    transition: background 0.2s;
+  }
+  .btn-main:hover { background: var(--emerald-dark); }
+  .btn-main:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-outline {
+    background: none; border: 1px solid var(--emerald); color: var(--emerald);
+    border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600;
+  }
+  .btn-outline:hover { background: var(--emerald-light); }
+  .btn-danger-outline {
+    background: none; border: 1px solid var(--danger); color: var(--danger);
+    border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600;
+  }
+  .btn-danger-outline:hover { background: #fdeceb; }
+  .btn-small { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+  .status { margin-top: 16px; font-size: 14px; min-height: 20px; }
+  .status.error { color: var(--danger); font-weight: 600; }
+  .status.success { color: var(--emerald-dark); font-weight: 600; }
+  .footer-note { margin-top: 20px; font-size: 12px; color: var(--muted); }
+
+  /* App shell */
+  .app-shell { display: none; min-height: 100vh; }
+  .topbar {
+    background: var(--card);
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 10;
+  }
+  .topbar .brand { display: flex; align-items: center; gap: 10px; }
+  .topbar .brand img { height: 38px; }
+  .brand-text { font-weight: 700; color: var(--emerald-dark); font-size: 15px; }
+  .role-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .role-badge.admin { background: #fff3d6; color: var(--warn); }
+  .role-badge.lecturer { background: #dff0e8; color: var(--emerald-dark); }
+  .who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .who img { width: 34px; height: 34px; border-radius: 50%; }
+  .who-name { font-size: 13px; font-weight: 600; }
+  .who-email { font-size: 11px; color: var(--muted); }
+
+  .main-area { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+  .panel {
+    background: var(--card); border-radius: 14px; padding: 22px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06); margin-bottom: 22px;
+  }
+  .panel-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+
+  form.grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; align-items: end; }
+  .field { display: flex; flex-direction: column; gap: 4px; text-align: right; }
+  .field label { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .field input, .field select {
+    padding: 9px 10px; border: 1px solid #d9e2df; border-radius: 8px; font-size: 13px;
+    font-family: inherit; background: #fff;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table th, table td { padding: 9px 8px; text-align: center; border-bottom: 1px solid #eef2f0; }
+  table th { background: var(--emerald-light); color: var(--emerald-dark); font-size: 12px; }
+  table tr:hover { background: #fafcfb; }
+  .empty-note { color: var(--muted); font-size: 13px; padding: 14px; text-align: center; }
+
+  .tag { display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+  .tag.present { background: #dff0e8; color: var(--emerald-dark); }
+  .tag.absent { background: #fdeceb; color: var(--danger); }
+  .tag.late { background: #fff3d6; color: var(--warn); }
+  .tag.excused { background: #e7eef8; color: #234e8a; }
+  .tag.open { background: #dff0e8; color: var(--emerald-dark); }
+  .tag.closed { background: #eee; color: var(--muted); }
+
+  select.status-select {
+    padding: 5px 6px; border-radius: 6px; border: 1px solid #d9e2df; font-size: 12px; font-family: inherit;
+  }
+
+  .qr-box { text-align: center; padding: 10px; }
+  .qr-box canvas { margin: 0 auto; }
+  .qr-timer { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .live-count { font-size: 28px; font-weight: 800; color: var(--emerald-dark); }
+  .live-count-label { font-size: 12px; color: var(--muted); }
+
+  .course-row-actions { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+
+  .back-link { display: inline-block; margin-bottom: 14px; color: var(--emerald-dark); font-size: 13px; cursor: pointer; font-weight: 600; }
+
+  .checkin-icon { font-size: 50px; margin-bottom: 6px; }
+
+  @media (max-width: 640px) {
+    .main-area { padding: 16px 10px 50px; }
+    .panel { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== شاشة تسجيل الدخول ========== -->
+<div class="center-screen" id="screen-login">
+  <div class="card">
+    <div class="logos">
+      <img src="logo-university.png" alt="جامعة المستقبل" onerror="this.style.display='none'">
+      <img src="logo-college.png" alt="كلية التربية البدنية" onerror="this.style.display='none'">
+    </div>
+    <h1>منصة تسجيل الحضور والغياب</h1>
+    <p class="sub">كلية التربية البدنية وعلوم الرياضة - جامعة المستقبل</p>
+    <button id="signin-btn" class="btn-main">تسجيل الدخول بحساب الجامعة</button>
+    <div id="status" class="status"></div>
+    <div class="footer-note">تسجيل الدخول حصري لإيميلات جامعة المستقبل الرسمية.</div>
+  </div>
+</div>
+
+<!-- ========== شاشة تسجيل حضور الطالب (عبر الباركود) ========== -->
+<div class="center-screen" id="screen-checkin" style="display:none;">
+  <div class="card">
+    <div class="logos">
+      <img src="logo-university.png" alt="" onerror="this.style.display='none'">
+      <img src="logo-college.png" alt="" onerror="this.style.display='none'">
+    </div>
+    <div id="checkin-body">
+      <p>جارِ التحقق...</p>
+    </div>
+  </div>
+</div>
+
+<!-- ========== واجهة التطبيق (أدمن / تدريسي) ========== -->
+<div class="app-shell" id="app-shell">
+  <div class="topbar">
+    <div class="brand">
+      <img src="logo-university.png" alt="" onerror="this.style.display='none'">
+      <span class="brand-text">منصة الحضور والغياب</span>
+    </div>
+    <div class="who">
+      <img id="dash-photo" src="" alt="">
+      <div>
+        <div class="who-name" id="dash-name"></div>
+        <div class="who-email" id="dash-email"></div>
+      </div>
+      <span class="role-badge" id="role-badge"></span>
+      <button id="signout-btn2" class="btn-danger-outline btn-small">تسجيل الخروج</button>
+    </div>
+  </div>
+
+  <div class="main-area">
+
+    <!-- قائمة المواد -->
+    <div class="panel" id="panel-course-form" style="display:none;">
+      <div class="panel-title"><h2>إضافة مادة جديدة</h2></div>
+      <form class="grid-form" id="course-form">
+        <div class="field"><label>اسم المادة</label><input required id="f-name" type="text"></div>
+        <div class="field"><label>المرحلة</label>
+          <select id="f-stage" required>
+            <option value="الأولى">الأولى</option>
+            <option value="الثانية">الثانية</option>
+            <option value="الثالثة">الثالثة</option>
+            <option value="الرابعة">الرابعة</option>
+          </select>
+        </div>
+        <div class="field"><label>الشعبة</label><input required id="f-section" type="text" placeholder="مثال: أ"></div>
+        <div class="field"><label>الدراسة</label>
+          <select id="f-study">
+            <option value="صباحي">صباحي</option>
+            <option value="مسائي">مسائي</option>
+          </select>
+        </div>
+        <div class="field"><label>اليوم</label>
+          <select id="f-day">
+            <option>الأحد</option><option>الاثنين</option><option>الثلاثاء</option>
+            <option>الأربعاء</option><option>الخميس</option>
+          </select>
+        </div>
+        <div class="field"><label>الوقت</label><input id="f-time" type="time"></div>
+        <div class="field"><label>القاعة</label><input id="f-hall" type="text"></div>
+        <div class="field"><label>إيميل التدريسي</label><input required id="f-lecturer" type="email" placeholder="name@uomus.edu.iq"></div>
+        <div class="field"><button type="submit" class="btn-main">إضافة المادة</button></div>
+      </form>
+      <div class="status" id="course-form-status"></div>
+    </div>
+
+    <!-- عرض المواد -->
+    <div class="panel">
+      <div class="panel-title">
+        <h2 id="courses-panel-title">موادي</h2>
+      </div>
+      <div id="courses-table-wrap"><div class="empty-note">جارِ التحميل...</div></div>
+    </div>
+
+    <!-- تفاصيل مادة محددة -->
+    <div class="panel" id="panel-course-detail" style="display:none;">
+      <span class="back-link" id="back-to-courses">◀ رجوع لقائمة المواد</span>
+      <div class="panel-title"><h2 id="detail-course-title"></h2></div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;" id="detail-grid">
+        <!-- التحكم بالمحاضرة -->
+        <div>
+          <h3 style="font-size:14px; color:var(--emerald-dark);">فتح محاضرة جديدة</h3>
+          <div id="session-controls">
+            <button id="open-session-btn" class="btn-main">فتح محاضرة (عرض الباركود)</button>
+          </div>
+          <div id="active-session-box" style="display:none; margin-top:14px; text-align:center;">
+            <div class="qr-box"><canvas id="qr-canvas"></canvas></div>
+            <div class="qr-timer" id="qr-timer-text"></div>
+            <div style="margin:14px 0;">
+              <div class="live-count" id="live-count">0</div>
+              <div class="live-count-label">عدد الحاضرين الآن</div>
+            </div>
+            <button id="close-session-btn" class="btn-danger-outline">إغلاق المحاضرة</button>
+          </div>
+
+          <div style="margin-top:24px;">
+            <h3 style="font-size:14px; color:var(--emerald-dark);">رفع قائمة الطلبة (Excel)</h3>
+            <p style="font-size:12px; color:var(--muted);">العمود الأول: الرقم الجامعي — العمود الثاني: اسم الطالب.</p>
+            <input type="file" id="roster-file" accept=".xlsx,.xls,.csv">
+            <div class="status" id="roster-status"></div>
+          </div>
+        </div>
+
+        <!-- سجلات الجلسات -->
+        <div>
+          <h3 style="font-size:14px; color:var(--emerald-dark);">سجل المحاضرات</h3>
+          <div id="sessions-list-wrap"><div class="empty-note">لا توجد محاضرات بعد</div></div>
+        </div>
+      </div>
+
+      <div style="margin-top:26px;">
+        <div class="panel-title">
+          <h3 style="font-size:14px; color:var(--emerald-dark); margin:0;">كشف الحضور والغياب</h3>
+          <button id="export-excel-btn" class="btn-outline btn-small">تصدير Excel</button>
+        </div>
+        <div id="attendance-table-wrap"><div class="empty-note">ارفع قائمة الطلبة أولاً</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs, deleteDoc,
+    query, where, onSnapshot, serverTimestamp, orderBy, updateDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // ============ إعدادات المشروع ============
+  const firebaseConfig = {
+    apiKey: "AIzaSyDLjmRbrc0921TcB596ChOMUEULRqi6qdA",
+    authDomain: "attendance-mustaqbal.firebaseapp.com",
+    projectId: "attendance-mustaqbal",
+    storageBucket: "attendance-mustaqbal.firebasestorage.app",
+    messagingSenderId: "196341031029",
+    appId: "1:196341031029:web:5f99b77b7e016d45b7d83c",
+    measurementId: "G-0Q896DJSH4"
+  };
+  const STUDENT_DOMAIN = "mustaqbal-college.edu.iq";
+  const STAFF_DOMAIN = "uomus.edu.iq";
+  const ALLOWED_DOMAINS = [STUDENT_DOMAIN, STAFF_DOMAIN];
+  const ADMIN_EMAIL = "ahmed.adnan@uomus.edu.iq";
+
+  const WINDOW_MINUTES = 10;   // مدة نافذة التسجيل
+  const LATE_AFTER_MINUTES = 5; // بعدها يُعتبر متأخر
+  const QR_ROTATE_SECONDS = 25;
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  // ============ أدوات مساعدة ============
+  function getRole(email) {
+    const e = (email || "").toLowerCase();
+    if (e === ADMIN_EMAIL) return "admin";
+    if (e.endsWith("@" + STAFF_DOMAIN)) return "lecturer";
+    if (e.endsWith("@" + STUDENT_DOMAIN)) return "student";
+    return null;
+  }
+  function studentNumberFromEmail(email) {
+    const m = (email || "").match(/^[a-zA-Z]*?(\d+)@/);
+    return m ? m[1] : null;
+  }
+  function randomSecret(len = 20) {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let s = "";
+    for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    return s;
+  }
+  async function simpleHash(str) {
+    const enc = new TextEncoder().encode(str);
+    const buf = await crypto.subtle.digest("SHA-256", enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 10);
+  }
+  function timeBucket(offsetSeconds = 0) {
+    return Math.floor((Date.now() / 1000 + offsetSeconds) / QR_ROTATE_SECONDS);
+  }
+  function fmtDateTime(ts) {
+    if (!ts) return "";
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleString("ar-IQ", { dateStyle: "short", timeStyle: "short" });
+  }
+  function fmtDateOnly(ts) {
+    if (!ts) return "";
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString("ar-IQ");
+  }
+
+  // ============ عناصر DOM: تسجيل الدخول ============
+  const screenLogin = document.getElementById("screen-login");
+  const screenCheckin = document.getElementById("screen-checkin");
+  const appShell = document.getElementById("app-shell");
+  const signinBtn = document.getElementById("signin-btn");
+  const statusEl = document.getElementById("status");
+  const signoutBtn2 = document.getElementById("signout-btn2");
+
+  function setStatus(msg, type) {
+    statusEl.textContent = msg;
+    statusEl.className = "status" + (type ? " " + type : "");
+  }
+
+  signinBtn.addEventListener("click", async () => {
+    signinBtn.disabled = true;
+    setStatus("جارِ تسجيل الدخول...", "");
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const email = (result.user.email || "").toLowerCase();
+      if (!ALLOWED_DOMAINS.some(d => email.endsWith("@" + d))) {
+        await signOut(auth);
+        setStatus("هذا الحساب غير مسموح به. استخدم إيميل جامعة المستقبل الرسمي فقط", "error");
+        signinBtn.disabled = false;
+      }
+    } catch (err) {
+      console.error(err);
+      setStatus("حدث خطأ أثناء تسجيل الدخول. حاول مرة أخرى.", "error");
+      signinBtn.disabled = false;
+    }
+  });
+  signoutBtn2.addEventListener("click", async () => { await signOut(auth); location.hash = ""; });
+
+  // ============ توجيه حسب حالة تسجيل الدخول ============
+  let currentUser = null;
+  let currentRole = null;
+
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    const email = (user && user.email || "").toLowerCase();
+    currentRole = user ? getRole(email) : null;
+
+    if (location.hash.startsWith("#checkin")) {
+      // شاشة تسجيل حضور الطالب تُدار بشكل مستقل
+      renderCheckinScreen();
+      return;
+    }
+
+    if (!user || !currentRole) {
+      screenLogin.style.display = "flex";
+      screenCheckin.style.display = "none";
+      appShell.style.display = "none";
+      signinBtn.disabled = false;
+      return;
+    }
+
+    if (currentRole === "admin" || currentRole === "lecturer") {
+      screenLogin.style.display = "none";
+      screenCheckin.style.display = "none";
+      appShell.style.display = "block";
+
+      document.getElementById("dash-photo").src = user.photoURL || "";
+      document.getElementById("dash-name").textContent = user.displayName || "";
+      document.getElementById("dash-email").textContent = user.email || "";
+      const badge = document.getElementById("role-badge");
+      if (currentRole === "admin") {
+        badge.textContent = "أدمن رئيسي"; badge.className = "role-badge admin";
+        document.getElementById("panel-course-form").style.display = "block";
+        document.getElementById("courses-panel-title").textContent = "كل المواد";
+      } else {
+        badge.textContent = "تدريسي"; badge.className = "role-badge lecturer";
+        document.getElementById("panel-course-form").style.display = "none";
+        document.getElementById("courses-panel-title").textContent = "موادي";
+      }
+      loadCourses();
+    } else {
+      // حساب طالب حاول يدخل الواجهة الرئيسية بدون رابط باركود
+      screenLogin.style.display = "flex";
+      appShell.style.display = "none";
+      signinBtn.style.display = "none";
+      setStatus("هذا الحساب مسجّل كطالب. لتسجيل الحضور استخدم رابط الباركود من قاعة المحاضرة.", "");
+    }
+  });
+
+  window.addEventListener("hashchange", () => {
+    if (location.hash.startsWith("#checkin")) renderCheckinScreen();
+  });
+
+  // ============ إدارة المواد ============
+  const coursesCol = collection(db, "courses");
+
+  document.getElementById("course-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const statusBox = document.getElementById("course-form-status");
+    const lecturerEmail = document.getElementById("f-lecturer").value.trim().toLowerCase();
+    if (!lecturerEmail.endsWith("@" + STAFF_DOMAIN)) {
+      statusBox.textContent = "إيميل التدريسي يجب أن ينتهي بـ @" + STAFF_DOMAIN;
+      statusBox.className = "status error";
+      return;
+    }
+    try {
+      await addDoc(coursesCol, {
+        name: document.getElementById("f-name").value.trim(),
+        stage: document.getElementById("f-stage").value,
+        section: document.getElementById("f-section").value.trim(),
+        studyType: document.getElementById("f-study").value,
+        day: document.getElementById("f-day").value,
+        time: document.getElementById("f-time").value,
+        hall: document.getElementById("f-hall").value.trim(),
+        lecturerEmail,
+        createdAt: serverTimestamp()
+      });
+      statusBox.textContent = "تمت إضافة المادة بنجاح ✅";
+      statusBox.className = "status success";
+      e.target.reset();
+      loadCourses();
+    } catch (err) {
+      console.error(err);
+      statusBox.textContent = "تعذّرت إضافة المادة. تأكد من قواعد Firestore.";
+      statusBox.className = "status error";
+    }
+  });
+
+  async function loadCourses() {
+    const wrap = document.getElementById("courses-table-wrap");
+    wrap.innerHTML = '<div class="empty-note">جارِ التحميل...</div>';
+    let snap;
+    if (currentRole === "admin") {
+      snap = await getDocs(coursesCol);
+    } else {
+      snap = await getDocs(query(coursesCol, where("lecturerEmail", "==", currentUser.email.toLowerCase())));
+    }
+    if (snap.empty) {
+      wrap.innerHTML = '<div class="empty-note">لا توجد مواد مضافة بعد</div>';
+      return;
+    }
+    let rows = "";
+    snap.forEach(d => {
+      const c = d.data();
+      rows += `<tr>
+        <td>${c.name || ""}</td>
+        <td>${c.stage || ""}</td>
+        <td>${c.section || ""}</td>
+        <td>${c.studyType || ""}</td>
+        <td>${c.day || ""} ${c.time || ""}</td>
+        <td>${c.hall || ""}</td>
+        <td>${c.lecturerEmail || ""}</td>
+        <td class="course-row-actions">
+          <button class="btn-outline btn-small" data-open="${d.id}">إدارة</button>
+          ${currentRole === "admin" ? `<button class="btn-danger-outline btn-small" data-del="${d.id}">حذف</button>` : ""}
+        </td>
+      </tr>`;
+    });
+    wrap.innerHTML = `<table>
+      <thead><tr><th>المادة</th><th>المرحلة</th><th>الشعبة</th><th>الدراسة</th><th>الموعد</th><th>القاعة</th><th>التدريسي</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table>`;
+
+    wrap.querySelectorAll("[data-open]").forEach(btn => {
+      btn.addEventListener("click", () => openCourseDetail(btn.getAttribute("data-open")));
+    });
+    wrap.querySelectorAll("[data-del]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("هل تريد حذف هذه المادة نهائياً؟")) return;
+        await deleteDoc(doc(db, "courses", btn.getAttribute("data-del")));
+        loadCourses();
+      });
+    });
+  }
+
+  document.getElementById("back-to-courses").addEventListener("click", () => {
+    stopSessionListeners();
+    document.getElementById("panel-course-detail").style.display = "none";
+  });
+
+  // ============ تفاصيل مادة: جلسات + باركود + روستر + تصدير ============
+  let activeCourseId = null;
+  let activeCourseData = null;
+  let unsubSessions = null;
+  let unsubActiveAttendance = null;
+  let qrInterval = null;
+
+  function stopSessionListeners() {
+    if (unsubSessions) { unsubSessions(); unsubSessions = null; }
+    if (unsubActiveAttendance) { unsubActiveAttendance(); unsubActiveAttendance = null; }
+    if (qrInterval) { clearInterval(qrInterval); qrInterval = null; }
+  }
+
+  async function openCourseDetail(courseId) {
+    activeCourseId = courseId;
+    const snap = await getDoc(doc(db, "courses", courseId));
+    if (!snap.exists()) return;
+    activeCourseData = snap.data();
+
+    document.getElementById("panel-course-detail").style.display = "block";
+    document.getElementById("detail-course-title").textContent =
+      `${activeCourseData.name} — المرحلة ${activeCourseData.stage} — شعبة ${activeCourseData.section}`;
+
+    document.getElementById("active-session-box").style.display = "none";
+    document.getElementById("session-controls").style.display = "block";
+
+    await checkForActiveSession();
+    loadSessionsList();
+    loadAttendanceTable();
+  }
+
+  // فتح محاضرة جديدة
+  document.getElementById("open-session-btn").addEventListener("click", async () => {
+    const secret = randomSecret();
+    const sessionsCol = collection(db, "courses", activeCourseId, "sessions");
+    const ref = await addDoc(sessionsCol, {
+      openAt: serverTimestamp(),
+      openAtClient: Date.now(),
+      windowMinutes: WINDOW_MINUTES,
+      lateAfterMinutes: LATE_AFTER_MINUTES,
+      secret,
+      active: true,
+      openedBy: currentUser.email
+    });
+    startActiveSessionUI(ref.id, secret, Date.now());
+    loadSessionsList();
+  });
+
+  async function checkForActiveSession() {
+    const sessionsCol = collection(db, "courses", activeCourseId, "sessions");
+    const snap = await getDocs(query(sessionsCol, where("active", "==", true)));
+    if (!snap.empty) {
+      const d = snap.docs[0];
+      const data = d.data();
+      startActiveSessionUI(d.id, data.secret, data.openAtClient || Date.now());
+    }
+  }
+
+  function startActiveSessionUI(sessionId, secret, openAtClient) {
+    document.getElementById("session-controls").style.display = "none";
+    const box = document.getElementById("active-session-box");
+    box.style.display = "block";
+    box.dataset.sessionId = sessionId;
+
+    async function renderQR() {
+      const bucket = timeBucket();
+      const token = await simpleHash(secret + "|" + bucket);
+      const baseUrl = location.origin + location.pathname;
+      const url = `${baseUrl}#checkin?c=${activeCourseId}&s=${sessionId}&t=${token}`;
+      QRCode.toCanvas(document.getElementById("qr-canvas"), url, { width: 220, margin: 2 }, () => {});
+
+      const elapsedMin = (Date.now() - openAtClient) / 60000;
+      const remain = Math.max(0, WINDOW_MINUTES - elapsedMin);
+      document.getElementById("qr-timer-text").textContent =
+        remain > 0 ? `الوقت المتبقي لنافذة التسجيل: ${Math.ceil(remain)} دقيقة` : "انتهت نافذة التسجيل — يمكنك إغلاق المحاضرة";
+    }
+    renderQR();
+    if (qrInterval) clearInterval(qrInterval);
+    qrInterval = setInterval(renderQR, QR_ROTATE_SECONDS * 1000);
+
+    if (unsubActiveAttendance) unsubActiveAttendance();
+    const attCol = collection(db, "courses", activeCourseId, "sessions", sessionId, "attendance");
+    unsubActiveAttendance = onSnapshot(attCol, (snap) => {
+      document.getElementById("live-count").textContent = snap.size;
+    });
+
+    document.getElementById("close-session-btn").onclick = async () => {
+      await updateDoc(doc(db, "courses", activeCourseId, "sessions", sessionId), {
+        active: false, closedAt: serverTimestamp()
+      });
+      stopSessionListeners();
+      document.getElementById("active-session-box").style.display = "none";
+      document.getElementById("session-controls").style.display = "block";
+      loadSessionsList();
+      loadAttendanceTable();
+    };
+  }
+
+  async function loadSessionsList() {
+    const wrap = document.getElementById("sessions-list-wrap");
+    const sessionsCol = collection(db, "courses", activeCourseId, "sessions");
+    const snap = await getDocs(query(sessionsCol, orderBy("openAtClient", "desc")));
+    if (snap.empty) {
+      wrap.innerHTML = '<div class="empty-note">لا توجد محاضرات بعد</div>';
+      return;
+    }
+    let rows = "";
+    for (const d of snap.docs) {
+      const s = d.data();
+      const attSnap = await getDocs(collection(db, "courses", activeCourseId, "sessions", d.id, "attendance"));
+      rows += `<tr>
+        <td>${fmtDateTime(s.openAt) || fmtDateOnly(s.openAtClient)}</td>
+        <td><span class="tag ${s.active ? "open" : "closed"}">${s.active ? "مفتوحة" : "مغلقة"}</span></td>
+        <td>${attSnap.size}</td>
+      </tr>`;
+    }
+    wrap.innerHTML = `<table><thead><tr><th>التاريخ</th><th>الحالة</th><th>عدد الحاضرين</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  // رفع قائمة الطلبة
+  document.getElementById("roster-file").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusBox = document.getElementById("roster-status");
+    statusBox.textContent = "جارِ القراءة...";
+    statusBox.className = "status";
+    try {
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      let count = 0;
+      for (const row of rows) {
+        if (!row || row.length < 2) continue;
+        const studentNumber = String(row[0]).trim();
+        const name = String(row[1]).trim();
+        if (!studentNumber || !name || studentNumber.toLowerCase().includes("رقم") || studentNumber.toLowerCase() === "id") continue;
+        await setDoc(doc(db, "courses", activeCourseId, "roster", studentNumber), { studentNumber, name });
+        count++;
+      }
+      statusBox.textContent = `تم استيراد ${count} طالب بنجاح ✅`;
+      statusBox.className = "status success";
+      loadAttendanceTable();
+    } catch (err) {
+      console.error(err);
+      statusBox.textContent = "تعذّرت قراءة الملف. تأكد من الصيغة.";
+      statusBox.className = "status error";
+    }
+  });
+
+  // جدول الحضور والغياب الكامل
+  async function loadAttendanceTable() {
+    const wrap = document.getElementById("attendance-table-wrap");
+    const rosterSnap = await getDocs(collection(db, "courses", activeCourseId, "roster"));
+    if (rosterSnap.empty) {
+      wrap.innerHTML = '<div class="empty-note">ارفع قائمة الطلبة أولاً</div>';
+      return;
+    }
+    const sessionsSnap = await getDocs(query(collection(db, "courses", activeCourseId, "sessions"), orderBy("openAtClient", "asc")));
+    const sessions = sessionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const students = rosterSnap.docs.map(d => d.data()).sort((a, b) => a.studentNumber.localeCompare(b.studentNumber));
+
+    // اجلب حضور كل جلسة
+    const attendanceMap = {}; // sessionId -> { studentNumber: status }
+    for (const s of sessions) {
+      const attSnap = await getDocs(collection(db, "courses", activeCourseId, "sessions", s.id, "attendance"));
+      attendanceMap[s.id] = {};
+      attSnap.forEach(a => { attendanceMap[s.id][a.id] = a.data().status; });
+    }
+
+    let head = `<th>الرقم الجامعي</th><th>الاسم</th>`;
+    sessions.forEach(s => { head += `<th>${fmtDateOnly(s.openAtClient)}</th>`; });
+    head += `<th>حضور</th><th>غياب</th><th>نسبة الغياب%</th>`;
+
+    let bodyRows = "";
+    students.forEach(st => {
+      let present = 0, absent = 0;
+      let cells = "";
+      sessions.forEach(s => {
+        const status = attendanceMap[s.id][st.studentNumber] || (s.active ? "" : "غائب");
+        if (status === "حاضر" || status === "متأخر") present++;
+        else if (status === "غائب") absent++;
+        const cls = status === "حاضر" ? "present" : status === "غائب" ? "absent" : status === "متأخر" ? "late" : status === "غياب بعذر" ? "excused" : "";
+        cells += `<td>${status ? `<span class="tag ${cls}">${status}</span>` : "-"}</td>`;
+      });
+      const total = sessions.length || 1;
+      const absPct = ((absent / total) * 100).toFixed(0);
+      bodyRows += `<tr><td>${st.studentNumber}</td><td>${st.name}</td>${cells}<td>${present}</td><td>${absent}</td><td>${absPct}%</td></tr>`;
+    });
+
+    wrap.innerHTML = `<div style="overflow-x:auto;"><table><thead><tr>${head}</tr></thead><tbody>${bodyRows}</tbody></table></div>`;
+
+    // خزّن للتصدير
+    wrap._exportData = { students, sessions, attendanceMap };
+  }
+
+  document.getElementById("export-excel-btn").addEventListener("click", () => {
+    const wrap = document.getElementById("attendance-table-wrap");
+    const data = wrap._exportData;
+    if (!data) { alert("لا توجد بيانات للتصدير بعد"); return; }
+    const { students, sessions, attendanceMap } = data;
+    const header = ["الرقم الجامعي", "الاسم", ...sessions.map(s => fmtDateOnly(s.openAtClient)), "حضور", "غياب", "نسبة الغياب%"];
+    const rows = [header];
+    students.forEach(st => {
+      let present = 0, absent = 0;
+      const cells = sessions.map(s => {
+        const status = attendanceMap[s.id][st.studentNumber] || (s.active ? "" : "غائب");
+        if (status === "حاضر" || status === "متأخر") present++;
+        else if (status === "غائب") absent++;
+        return status || "-";
+      });
+      const total = sessions.length || 1;
+      rows.push([st.studentNumber, st.name, ...cells, present, absent, ((absent / total) * 100).toFixed(0) + "%"]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "كشف الحضور");
+    XLSX.writeFile(wb, `${activeCourseData.name}-حضور.xlsx`);
+  });
+
+  // ============ شاشة تسجيل حضور الطالب عبر الباركود ============
+  async function renderCheckinScreen() {
+    screenLogin.style.display = "none";
+    appShell.style.display = "none";
+    screenCheckin.style.display = "flex";
+    const body = document.getElementById("checkin-body");
+
+    const params = new URLSearchParams(location.hash.replace("#checkin?", ""));
+    const courseId = params.get("c");
+    const sessionId = params.get("s");
+    const token = params.get("t");
+
+    if (!courseId || !sessionId || !token) {
+      body.innerHTML = `<div class="checkin-icon">⚠️</div><p>رابط غير صالح.</p>`;
+      return;
+    }
+
+    if (!currentUser) {
+      body.innerHTML = `
+        <h1 style="font-size:17px;">تسجيل حضور محاضرة</h1>
+        <p class="sub">سجّل الدخول بإيميلك الجامعي لتسجيل حضورك</p>
+        <button id="checkin-signin-btn" class="btn-main">تسجيل الدخول</button>
+        <div id="checkin-status" class="status"></div>`;
+      document.getElementById("checkin-signin-btn").addEventListener("click", async () => {
+        try { await signInWithPopup(auth, provider); }
+        catch (err) { console.error(err); }
+      });
+      return;
+    }
+
+    const email = (currentUser.email || "").toLowerCase();
+    if (!email.endsWith("@" + STUDENT_DOMAIN)) {
+      body.innerHTML = `<div class="checkin-icon">⚠️</div><p>هذه الصفحة مخصصة لتسجيل حضور الطلبة فقط بإيميل جامعة المستقبل الطلابي.</p>
+        <button id="checkin-signout" class="btn-outline">تسجيل الخروج والمحاولة بحساب آخر</button>`;
+      document.getElementById("checkin-signout").addEventListener("click", async () => { await signOut(auth); });
+      return;
+    }
+
+    const studentNumber = studentNumberFromEmail(email);
+    if (!studentNumber) {
+      body.innerHTML = `<div class="checkin-icon">⚠️</div><p>تعذّر التعرف على رقمك الجامعي من الإيميل.</p>`;
+      return;
+    }
+
+    body.innerHTML = `<p>جارِ التحقق من بياناتك...</p>`;
+
+    try {
+      const courseSnap = await getDoc(doc(db, "courses", courseId));
+      if (!courseSnap.exists()) throw new Error("course-not-found");
+      const course = courseSnap.data();
+
+      const rosterSnap = await getDoc(doc(db, "courses", courseId, "roster", studentNumber));
+      if (!rosterSnap.exists()) {
+        body.innerHTML = `<div class="checkin-icon">🚫</div><p>أنت غير مسجّل بقائمة طلبة مادة <b>${course.name}</b>.</p>`;
+        return;
+      }
+      const studentName = rosterSnap.data().name;
+
+      const sessionSnap = await getDoc(doc(db, "courses", courseId, "sessions", sessionId));
+      if (!sessionSnap.exists() || !sessionSnap.data().active) {
+        body.innerHTML = `<div class="checkin-icon">⏱️</div><p>هذه المحاضرة مغلقة حالياً، لا يمكن تسجيل الحضور.</p>`;
+        return;
+      }
+      const session = sessionSnap.data();
+
+      const elapsedMin = (Date.now() - (session.openAtClient || Date.now())) / 60000;
+      if (elapsedMin > session.windowMinutes) {
+        body.innerHTML = `<div class="checkin-icon">⏱️</div><p>انتهت نافذة تسجيل الحضور لهذه المحاضرة.</p>`;
+        return;
+      }
+
+      // تحقق من صحة الباركود (رمز متجدد)
+      let tokenValid = false;
+      for (let off = 0; off >= -2 * QR_ROTATE_SECONDS; off -= QR_ROTATE_SECONDS) {
+        const bucket = timeBucket(off);
+        const expected = await simpleHash(session.secret + "|" + bucket);
+        if (expected === token) { tokenValid = true; break; }
+      }
+      if (!tokenValid) {
+        body.innerHTML = `<div class="checkin-icon">🔄</div><p>الباركود منتهي الصلاحية، اطلب من التدريسي تحديث الشاشة وأعد المسح.</p>`;
+        return;
+      }
+
+      const attRef = doc(db, "courses", courseId, "sessions", sessionId, "attendance", studentNumber);
+      const existing = await getDoc(attRef);
+      if (existing.exists()) {
+        body.innerHTML = `<div class="checkin-icon">✅</div><p>أنت مسجّل حضورك مسبقاً بهذه المحاضرة، مرحباً ${studentName}.</p>`;
+        return;
+      }
+
+      const status = elapsedMin > session.lateAfterMinutes ? "متأخر" : "حاضر";
+      await setDoc(attRef, {
+        studentNumber, name: studentName, status, markedAt: serverTimestamp(), method: "qr"
+      });
+
+      body.innerHTML = `<div class="checkin-icon">✅</div>
+        <h1 style="font-size:17px;">تم تسجيل حضورك بنجاح</h1>
+        <p class="sub">${studentName} — ${course.name}</p>
+        <p class="status success">${status === "متأخر" ? "تم تسجيلك كـ (متأخر)" : "تم تسجيلك كـ (حاضر)"}</p>`;
+
+    } catch (err) {
+      console.error(err);
+      body.innerHTML = `<div class="checkin-icon">⚠️</div><p>حدث خطأ أثناء التحقق. حاول مرة أخرى.</p>`;
+    }
+  }
+
+</script>
+</body>
+</html>
